@@ -64,6 +64,7 @@ func GetTasks(c *gin.Context) {
 	tasks, err := repository.GetAllTasks(keyword, status, assignee, page, limit, sort)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
+			"success": false,
 			"message": err.Error(),
 		})
 		return
@@ -72,6 +73,7 @@ func GetTasks(c *gin.Context) {
 	log.Println("Use Query Database")
 	response := gin.H{
 		"success": true,
+		"message": "Tasks retrieved successfully",
 		"data":    tasks,
 	}
 
@@ -93,6 +95,7 @@ func CreateTask(c *gin.Context) {
 
 	if err := c.ShouldBindJSON(&task); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{
+			"success": false,
 			"message": err.Error(),
 		})
 		return
@@ -105,12 +108,14 @@ func CreateTask(c *gin.Context) {
 		// jika error duplicate title
 		if strings.Contains(err.Error(), "Duplicate entry") {
 			c.JSON(http.StatusConflict, gin.H{
+				"success": false,
 				"message": "Task title " + task.Title + " already exists",
 			})
 			return
 		}
 
 		c.JSON(http.StatusInternalServerError, gin.H{
+			"success": false,
 			"message": err.Error(),
 		})
 
@@ -119,13 +124,13 @@ func CreateTask(c *gin.Context) {
 	}
 
 	// delete redis
-	ctx := context.Background()
-	keys, _ := config.Redis.Keys(ctx, "tasks:*").Result()
-	for _, key := range keys {
-		config.Redis.Del(ctx, key)
-	}
+	clearTaskCache()
 
-	c.JSON(http.StatusCreated, task)
+	c.JSON(http.StatusCreated, gin.H{
+		"success": true,
+		"message": "Task created successfully",
+		"data":    task,
+	})
 
 }
 
@@ -139,13 +144,18 @@ func GetTask(c *gin.Context) {
 	if err != nil {
 
 		c.JSON(http.StatusNotFound, gin.H{
+			"success": false,
 			"message": "Task not found",
 		})
 
 		return
 	}
 
-	c.JSON(http.StatusOK, task)
+	c.JSON(http.StatusOK, gin.H{
+		"success": true,
+		"message": "Task retrieved successfully",
+		"data":    task,
+	})
 
 }
 
@@ -157,6 +167,7 @@ func UpdateTask(c *gin.Context) {
 	task, err := repository.GetTaskByID(uint(id))
 	if err != nil {
 		c.JSON(http.StatusNotFound, gin.H{
+			"success": false,
 			"message": "Task not found",
 		})
 		return
@@ -166,6 +177,7 @@ func UpdateTask(c *gin.Context) {
 
 	if err := c.ShouldBindJSON(&input); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{
+			"success": false,
 			"message": err.Error(),
 		})
 		return
@@ -181,25 +193,27 @@ func UpdateTask(c *gin.Context) {
 		// jika error duplicate title
 		if strings.Contains(err.Error(), "Duplicate entry") {
 			c.JSON(http.StatusConflict, gin.H{
+				"success": false,
 				"message": "Task title " + task.Title + " already exists",
 			})
 			return
 		}
 
 		c.JSON(http.StatusInternalServerError, gin.H{
+			"success": false,
 			"message": err.Error(),
 		})
 		return
 	}
 
 	// delete redis
-	ctx := context.Background()
-	keys, _ := config.Redis.Keys(ctx, "tasks:*").Result()
-	for _, key := range keys {
-		config.Redis.Del(ctx, key)
-	}
+	clearTaskCache()
 
-	c.JSON(http.StatusOK, task)
+	c.JSON(http.StatusOK, gin.H{
+		"success": true,
+		"message": "Task updated successfully",
+		"data":    task,
+	})
 }
 
 // delete
@@ -208,10 +222,10 @@ func DeleteTask(c *gin.Context) {
 	id, _ := strconv.Atoi(c.Param("id"))
 
 	err := repository.DeleteTask(uint(id))
-
 	if err != nil {
 
 		c.JSON(http.StatusNotFound, gin.H{
+			"success": false,
 			"message": "Task not found",
 		})
 
@@ -219,14 +233,22 @@ func DeleteTask(c *gin.Context) {
 	}
 
 	// delete redis
-	ctx := context.Background()
-	keys, _ := config.Redis.Keys(ctx, "tasks:*").Result()
-	for _, key := range keys {
-		config.Redis.Del(ctx, key)
-	}
+	clearTaskCache()
 
 	c.JSON(http.StatusOK, gin.H{
+		"success": true,
 		"message": "Task deleted successfully",
 	})
 
+}
+
+// helper cleare redis
+func clearTaskCache() {
+	ctx := context.Background()
+
+	keys, _ := config.Redis.Keys(ctx, "tasks:*").Result()
+
+	for _, key := range keys {
+		config.Redis.Del(ctx, key)
+	}
 }
