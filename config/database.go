@@ -13,6 +13,8 @@ import (
 var DB *gorm.DB
 
 func ConnectDatabase() {
+
+	// Membuat DSN (Data Source Name) dari konfigurasi .env
 	dsn := fmt.Sprintf(
 		"%s:%s@tcp(%s:%s)/%s?charset=utf8mb4&parseTime=True&loc=Local",
 		Env("DB_USER"),
@@ -22,19 +24,22 @@ func ConnectDatabase() {
 		Env("DB_NAME"),
 	)
 
+
+	// Membuka koneksi ke database menggunakan GORM
 	database, err := gorm.Open(mysql.Open(dsn), &gorm.Config{})
 	if err != nil {
-		log.Fatal("❌ Failed to connect database : ", err)
+		log.Fatal("Failed to connect database : ", err)
 	}
 
 	DB = database
 
-	log.Println("✅ MySQL Connected")
+	log.Println("MySQL Connected")
 
+	// Membuat atau memperbarui struktur tabel berdasarkan model
 	err = DB.AutoMigrate(&models.Task{})
 	if err != nil {
-		log.Fatal("❌ Auto Migration Failed : ", err)
+		log.Fatal("Auto Migration Failed : ", err)
 	}
 
-	log.Println("✅ Database Migrated")
+	log.Println("Database Migrated")
 }

@@ -14,6 +14,8 @@ var (
 	Ctx   = context.Background()
 )
 
+// ConnectRedis membuat koneksi ke Redis
+// yang digunakan sebagai cache pada endpoint GET /api/tasks.
 func ConnectRedis() {
 
 	db, _ := strconv.Atoi(Env("REDIS_DB"))
@@ -26,8 +28,8 @@ func ConnectRedis() {
 
 	_, err := Redis.Ping(Ctx).Result()
 	if err != nil {
-		log.Fatal("❌ Failed to connect Redis :", err)
+		log.Fatal("Failed to connect Redis :", err)
 	}
 
-	log.Println("✅ Redis Connected")
+	log.Println("Redis Connected")
 }

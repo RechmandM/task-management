@@ -11,15 +11,21 @@ import (
 
 func main() {
 
-	config.LoadEnv() // load .env
+	// Load konfigurasi environment (.env)
+	config.LoadEnv()
 
-	config.ConnectDatabase() // konek database
-	config.ConnectRedis()    // konek redis
+	// Inisialisasi koneksi database MySQL
+	config.ConnectDatabase()
 
+	// Inisialisasi koneksi Redis
+	config.ConnectRedis()
+
+	// Membuat instance Gin Engine
 	router := gin.Default()
 
-	// 2. Pasang Middleware CORS
-	// Pengaturan AllowAllOrigins cocok & cepat untuk kebutuhan tes/development
+	// Middleware CORS
+	// Mengizinkan frontend (React Native Web) mengakses API
+	// selama proses development dan testing.
 	router.Use(cors.New(cors.Config{
 		AllowAllOrigins:  true,
 		AllowMethods:     []string{"GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"},
@@ -29,14 +35,16 @@ func main() {
 		MaxAge:           12 * time.Hour,
 	}))
 
+	// Endpoint sederhana untuk memastikan API berjalan
 	router.GET("/health", func(c *gin.Context) {
 		c.JSON(200, gin.H{
 			"message": "API Running",
 		})
 	})
 
+	// Registrasi seluruh endpoint API
 	routes.SetupRoutes(router)
 
+	// Menjalankan server pada port 8080
 	router.Run(":8080")
 }
-

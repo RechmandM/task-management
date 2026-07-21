@@ -8,12 +8,12 @@ import (
 )
 
 func LoadEnv() {
-	// coba cari .env di folder saat ini
+	// Mencari file .env pada root project
 	if err := godotenv.Load(".env"); err == nil {
 		return
 	}
 
-	// kalau test dijalankan dari folder tests
+	// Digunakan ketika unit test dijalankan dari folder tests
 	if err := godotenv.Load("../.env"); err == nil {
 		return
 	}
@@ -21,6 +21,7 @@ func LoadEnv() {
 	log.Println(".env not found, using system environment")
 }
 
+// Env digunakan untuk mengambil nilai environment variable.
 func Env(key string) string {
 	return os.Getenv(key)
 }
