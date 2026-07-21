@@ -6,9 +6,10 @@ import (
 )
 
 // func GetAllTasks() ([]models.Task, error) {
-func GetAllTasks(keyword string, status string, assignee string, page int, limit int, sort string) ([]models.Task, error) {
+func GetAllTasks(keyword string, status string, assignee string, page int, limit int, sort string) ([]models.Task, int64, error) {
 
 	var tasks []models.Task
+	var totalRecords int64
 
 	db := config.DB.Model(&models.Task{})
 
@@ -31,6 +32,12 @@ func GetAllTasks(keyword string, status string, assignee string, page int, limit
 		db = db.Where("assignee = ?", assignee)
 	}
 
+	// 4. Hitung TOTAL DATA (sebelum sorting, offset, & limit)
+	// GORM otomatis mengabaikan data dengan DeletedAt != NULL
+	if err := db.Count(&totalRecords).Error; err != nil {
+		return nil, 0, err
+	}
+
 	// Sorting
 	switch sort {
 	case "created_at_asc":
@@ -48,12 +55,14 @@ func GetAllTasks(keyword string, status string, assignee string, page int, limit
 	// Pagination
 	offset := (page - 1) * limit
 
+	// get count
+
 	err := db.
 		Offset(offset).
 		Limit(limit).
 		Find(&tasks).Error
 
-	return tasks, err
+	return tasks, totalRecords, err
 }
 
 // create

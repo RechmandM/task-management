@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"log"
+	"math"
 	"net/http"
 	"strconv"
 	"strings"
@@ -61,7 +62,7 @@ func GetTasks(c *gin.Context) {
 	// ========== redis close
 
 	// get data from database
-	tasks, err := repository.GetAllTasks(keyword, status, assignee, page, limit, sort)
+	tasks, totalRecords, err := repository.GetAllTasks(keyword, status, assignee, page, limit, sort)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
 			"success": false,
@@ -70,11 +71,15 @@ func GetTasks(c *gin.Context) {
 		return
 	}
 
+	// Hitung Total Halaman (Total Pages)
+	totalPages := int(math.Ceil(float64(totalRecords) / float64(limit)))
+
 	log.Println("Use Query Database")
 	response := gin.H{
 		"success": true,
 		"message": "Tasks retrieved successfully",
 		"data":    tasks,
+		"total_pages":   totalPages,
 	}
 
 	// =========================

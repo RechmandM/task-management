@@ -8,10 +8,17 @@ import (
 )
 
 func LoadEnv() {
-	err := godotenv.Load()
-	if err != nil {
-		log.Println(".env not found, using system environment")
+	// coba cari .env di folder saat ini
+	if err := godotenv.Load(".env"); err == nil {
+		return
 	}
+
+	// kalau test dijalankan dari folder tests
+	if err := godotenv.Load("../.env"); err == nil {
+		return
+	}
+
+	log.Println(".env not found, using system environment")
 }
 
 func Env(key string) string {
