@@ -50,7 +50,6 @@ This project was developed as part of a Full Stack Engineer technical assessment
 │   └── main.go
 ├── config/
 ├── controllers/
-├── middleware/
 ├── models/
 ├── repository/
 ├── routes/

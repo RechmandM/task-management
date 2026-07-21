@@ -5,7 +5,16 @@ import (
 	"github.com/rechmand/task-management/models"
 )
 
-// func GetAllTasks() ([]models.Task, error) {
+// ======================================================
+// Task Repository
+// Berisi seluruh proses akses database (CRUD)
+// menggunakan GORM.
+// ======================================================
+
+// Mengambil daftar task berdasarkan parameter filter,
+// sorting dan pagination.
+// Method ini juga mengembalikan total data untuk
+// kebutuhan perhitungan total halaman (pagination).
 func GetAllTasks(keyword string, status string, assignee string, page int, limit int, sort string) ([]models.Task, int64, error) {
 
 	var tasks []models.Task
@@ -13,6 +22,7 @@ func GetAllTasks(keyword string, status string, assignee string, page int, limit
 
 	db := config.DB.Model(&models.Task{})
 
+	// Terapkan filter sesuai query parameter yang dikirim client.
 	// Filter Keyword
 	if keyword != "" {
 		db = db.Where(
@@ -32,13 +42,13 @@ func GetAllTasks(keyword string, status string, assignee string, page int, limit
 		db = db.Where("assignee = ?", assignee)
 	}
 
-	// 4. Hitung TOTAL DATA (sebelum sorting, offset, & limit)
-	// GORM otomatis mengabaikan data dengan DeletedAt != NULL
+	// Menghitung total data sebelum pagination diterapkan.
+	// Total data digunakan untuk menghitung total halaman.
 	if err := db.Count(&totalRecords).Error; err != nil {
 		return nil, 0, err
 	}
 
-	// Sorting
+	// Menentukan urutan data berdasarkan parameter sort.
 	switch sort {
 	case "created_at_asc":
 		db = db.Order("created_at ASC")
@@ -52,11 +62,10 @@ func GetAllTasks(keyword string, status string, assignee string, page int, limit
 		db = db.Order("id DESC")
 	}
 
-	// Pagination
+	// Menghitung offset berdasarkan halaman yang dipilih.
 	offset := (page - 1) * limit
 
-	// get count
-
+	// Mengambil data sesuai filter, sorting dan pagination.
 	err := db.
 		Offset(offset).
 		Limit(limit).
@@ -65,14 +74,14 @@ func GetAllTasks(keyword string, status string, assignee string, page int, limit
 	return tasks, totalRecords, err
 }
 
-// create
+// Menyimpan data task baru ke database.
 func CreateTask(task *models.Task) error {
-
+	// Menyimpan data task baru ke database.
 	return config.DB.Create(task).Error
 
 }
 
-// for update
+// Mengambil satu data task berdasarkan ID.
 func GetTaskByID(id uint) (models.Task, error) {
 
 	var task models.Task
@@ -83,15 +92,19 @@ func GetTaskByID(id uint) (models.Task, error) {
 
 }
 
+// Memperbarui data task yang sudah ada.
 func UpdateTask(task *models.Task) error {
 
 	return config.DB.Save(task).Error
 
 }
 
+// Melakukan soft delete.
+// GORM hanya mengisi kolom deleted_at sehingga
+// data masih dapat dipulihkan jika diperlukan.
 func DeleteTask(id uint) error {
 
-	// lebih pendek
+	// lebih pendek jika menggunakan ini
 	// return config.DB.Delete(&models.Task{}, id).Error
 
 	var task models.Task

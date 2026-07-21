@@ -17,23 +17,3 @@ type Task struct {
 	UpdatedAt time.Time      `json:"updated_at"`
 	DeletedAt gorm.DeletedAt `gorm:"index" json:"-"`
 }
-
-
-// CREATE TABLE tasks (
-//     id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
-//     title VARCHAR(255) NOT NULL,
-//     description TEXT,
-//     status VARCHAR(50) NOT NULL DEFAULT 'pending',
-//     assignee VARCHAR(100),
-
-//     created_at TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP,
-//     updated_at TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-//     deleted_at TIMESTAMP NULL DEFAULT NULL,
-
-//     UNIQUE KEY uk_tasks_title (title),
-
-//     INDEX idx_status (status),
-//     INDEX idx_assignee (assignee),
-//     INDEX idx_deleted_at (deleted_at),
-//     INDEX idx_created_at (created_at)
-// );
