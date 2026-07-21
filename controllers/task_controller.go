@@ -16,7 +16,16 @@ import (
 	"github.com/rechmand/task-management/repository"
 )
 
-// get task
+// ======================================================
+// Task Controller
+// Berisi implementasi endpoint CRUD Task beserta
+// filtering, pagination, Redis Cache dan cache invalidation.
+// ======================================================
+
+// Mengambil daftar task berdasarkan parameter filter.
+// Data akan diambil dari Redis terlebih dahulu.
+// Jika cache tidak ditemukan, data diambil dari MySQL
+// kemudian disimpan kembali ke Redis selama 60 detik.
 func GetTasks(c *gin.Context) {
 
 	keyword := c.DefaultQuery("keyword", "")
@@ -27,41 +36,41 @@ func GetTasks(c *gin.Context) {
 	page, _ := strconv.Atoi(c.DefaultQuery("page", "1"))
 	limit, _ := strconv.Atoi(c.DefaultQuery("limit", "10"))
 
-	// validasi page
+	// Validasi nilai pagination
+	// - page minimal 1
 	if page < 1 {
 		page = 1
 	}
 
+	// - limit default 10
 	if limit < 1 {
 		limit = 10
 	}
 
+	// - limit maksimal 100
 	if limit > 100 {
 		limit = 100
 	}
 
-	// ========== redis open
+	// Membuat cache key berdasarkan query parameter.
+	// Contoh: tasks:status=pending&page=1&limit=10
 	ctx := context.Background()
 	cacheKey := "tasks:" + c.Request.URL.RawQuery
-
-	// =========================
-	// Check Redis
-	// =========================
 	cached, err := config.Redis.Get(ctx, cacheKey).Result()
 
+	// Cek apakah data sudah tersedia di Redis.
+	// Jika ada, langsung kembalikan response tanpa query database.
 	if err == nil {
-
 		c.Data(
 			http.StatusOK,
 			"application/json",
 			[]byte(cached),
 		)
-
 		return
 	}
-	// ========== redis close
 
-	// get data from database
+	// Cache tidak ditemukan,
+	// ambil data terbaru dari database.
 	tasks, totalRecords, err := repository.GetAllTasks(keyword, status, assignee, page, limit, sort)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
@@ -73,18 +82,16 @@ func GetTasks(c *gin.Context) {
 
 	// Hitung Total Halaman (Total Pages)
 	totalPages := int(math.Ceil(float64(totalRecords) / float64(limit)))
-
 	log.Println("Use Query Database")
 	response := gin.H{
-		"success": true,
-		"message": "Tasks retrieved successfully",
-		"data":    tasks,
-		"total_pages":   totalPages,
+		"success":     true,
+		"message":     "Tasks retrieved successfully",
+		"data":        tasks,
+		"total_pages": totalPages,
 	}
 
-	// =========================
-	// Save Redis
-	// =========================
+	// Simpan hasil query ke Redis
+	// agar request berikutnya lebih cepat.
 	jsonData, _ := json.Marshal(response)
 	config.Redis.Set(ctx, cacheKey, jsonData, 60*time.Second)
 
@@ -93,7 +100,10 @@ func GetTasks(c *gin.Context) {
 
 }
 
-// post task
+// Membuat task baru.
+// Setelah data berhasil disimpan,
+// seluruh cache task akan dihapus
+// agar data terbaru selalu ditampilkan.
 func CreateTask(c *gin.Context) {
 
 	var task models.Task
@@ -164,7 +174,8 @@ func GetTask(c *gin.Context) {
 
 }
 
-// update task
+// Memperbarui data task berdasarkan ID.
+// Cache akan dihapus setelah update berhasil.
 func UpdateTask(c *gin.Context) {
 
 	id, _ := strconv.Atoi(c.Param("id"))
@@ -221,7 +232,9 @@ func UpdateTask(c *gin.Context) {
 	})
 }
 
-// delete
+// Soft Delete task berdasarkan ID.
+// Data tidak benar-benar dihapus dari database,
+// melainkan hanya mengisi kolom deleted_at.
 func DeleteTask(c *gin.Context) {
 
 	id, _ := strconv.Atoi(c.Param("id"))
@@ -247,7 +260,9 @@ func DeleteTask(c *gin.Context) {
 
 }
 
-// helper cleare redis
+// Menghapus seluruh cache task.
+// Dipanggil setiap terjadi Create, Update atau Delete
+// agar cache tidak menyimpan data lama.
 func clearTaskCache() {
 	ctx := context.Background()
 
