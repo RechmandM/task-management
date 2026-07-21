@@ -68,7 +68,7 @@ This project was developed as part of a Full Stack Engineer technical assessment
 ### 1. Clone Repository
 
 ```bash
-git clone https://github.com/USERNAME/task-management.git
+git clone https://github.com/RechmandM/task-management.git
 
 cd task-management
 ```
@@ -259,8 +259,30 @@ Cache will be automatically invalidated after
 
 ---
 
+## API Testing
+
+### Get Tasks
+
+![Get Tasks](docs/get-tasks.png)
+
+### Create Task
+
+![Create Task](docs/create-task.png)
+
+### Duplicate Title Validation (HTTP 409)
+
+![Create DUplicate](docs/create-task-duplicate.png)
+
+### Redis Cache
+
+![Redis](docs/redis.png)
+
+---
+
 ## Author
 
-Mohammad Nurrahman
-
+**Mohammad Nurrahman**  
 Full Stack Software Engineer
+
+- GitHub: https://github.com/RechmandM
+- Portfolio: https://www.rechmand.id
